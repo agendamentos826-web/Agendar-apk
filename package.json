@@ -1,7 +1,7 @@
 {
   "name": "barbearia-app",
   "version": "1.0.0",
-  "description": "App Barbearia Lucas Borges",
+  "description": "App Barbearia Lucas Borges Agendamento",
   "main": "index.js",
   "scripts": {
     "build": "mkdir -p www && echo '<html></html>' > www/index.html"

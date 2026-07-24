@@ -1,0 +1,9 @@
+{
+  "appId": "com.lucasborges.agendamento",
+  "appName": "Agendar LB",
+  "webDir": "www",
+  "server": {
+    "url": "https://agendamento-interno-lucas-borges.onrender.com",
+    "cleartext": true
+  }
+}

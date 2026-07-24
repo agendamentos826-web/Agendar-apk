@@ -1,0 +1,62 @@
+# ===============================================================
+# DOCUMENTAÇÃO DO FLUXO DE TRABALHO (GITHUB ACTIONS)
+# Este arquivo instrui o servidor a compilar o APK da Barbearia.
+# ===============================================================
+
+name: Compilar Aplicativo Barbearia
+
+# Define que a compilação roda automaticamente ao salvar ou manualmente
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch:
+
+jobs:
+  build:
+    # Executa em uma máquina virtual Linux gratuita fornecida pelo GitHub
+    runs-on: ubuntu-latest
+
+    steps:
+      # Passo 1: Copia os arquivos do repositório para o servidor de compilação
+      - name: Baixar Código do Repositório
+        uses: actions/checkout@v3
+
+      # Passo 2: Prepara o ambiente Node.js para o Capacitor
+      - name: Configurar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      # Passo 3: Prepara o Java para compilar aplicativos Android
+      - name: Configurar Java JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # Passo 4: Instala dependências do aplicativo
+      - name: Instalar Dependências e Criar Projeto Android
+        run: |
+          npm install
+          npm run build
+          npx cap add android
+
+      # Passo 5: Adiciona as permissões de microfone contínuo no AndroidManifest.xml
+      - name: Configurar Permissões de Microfone e Segundo Plano
+        run: |
+          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />\n    <uses-permission android:name="android.permission.WAKE_LOCK" />' $MANIFEST_PATH
+
+      # Passo 6: Gera o arquivo final .APK do aplicativo
+      - name: Compilar Ficheiro APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      # Passo 7: Salva o APK para você fazer o download no celular
+      - name: Disponibilizar o APK para Download
+        uses: actions/upload-artifact@v4
+        with:
+          name: BarbeariaApp-APK
+          path: android/app/build/outputs/apk/debug/app-debug.apk

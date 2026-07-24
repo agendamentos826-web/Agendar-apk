@@ -1,0 +1,63 @@
+# ===============================================================
+# DOCUMENTAÇÃO DO FLUXO DE TRABALHO (GITHUB ACTIONS)
+# Este ficheiro instrui os servidores do GitHub a criar o APK Android.
+# ===============================================================
+
+# Nome do processo que vai aparecer na aba Actions
+name: Compilar Aplicativo Barbearia
+
+# Define quando o processo deve ser executado (Sempre que houver alteração de código)
+on:
+  push:
+    branches: [ main, master ]
+  workflow_dispatch: # Permite rodar manualmente se desejar
+
+jobs:
+  build:
+    # Utiliza uma máquina virtual Linux Ubuntu gratuita do GitHub
+    runs-on: ubuntu-latest
+
+    steps:
+      # Passo 1: Baixa os ficheiros do seu repositório para a máquina virtual
+      - name: Baixar Ficheiros do Repositório
+        uses: actions/checkout@v3
+
+      # Passo 2: Instala o ambiente Node.js (necessário para rodar o Capacitor)
+      - name: Configurar Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: 18
+
+      # Passo 3: Instala o Java JDK (necessário para compilar apps Android)
+      - name: Configurar Java JDK 17
+        uses: actions/setup-java@v3
+        with:
+          distribution: 'zulu'
+          java-version: '17'
+
+      # Passo 4: Instala o Capacitor e gera a estrutura Android
+      - name: Instalar Dependências e Criar Pasta Android
+        run: |
+          npm install
+          npm run build
+          npx cap add android
+
+      # Passo 5: Insere as permissões de Microfone e Segundo Plano no AndroidManifest.xml
+      - name: Inserir Permissões de Áudio em Segundo Plano
+        run: |
+          MANIFEST_PATH="android/app/src/main/AndroidManifest.xml"
+          sed -i '/<application/i \    <uses-permission android:name="android.permission.RECORD_AUDIO" />\n    <uses-permission android:name="android.permission.MODIFY_AUDIO_SETTINGS" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />\n    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />\n    <uses-permission android:name="android.permission.WAKE_LOCK" />' $MANIFEST_PATH
+
+      # Passo 6: Compila o projeto Android gerando o ficheiro .APK
+      - name: Compilar Ficheiro APK
+        run: |
+          cd android
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      # Passo 7: Disponibiliza o ficheiro .APK para você baixar no telemóvel
+      - name: Salvar APK para Download
+        uses: actions/upload-artifact@v4
+        with:
+          name: Agendar LB
+          path: android/app/build/outputs/apk/debug/app-debug.apk
